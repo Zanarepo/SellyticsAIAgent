@@ -1,0 +1,5 @@
+{
+  "version": 2,
+  "builds": [{ "src": "dynamsales.py", "use": "@vercel/python" }],
+  "routes": [{ "src": "/forecast", "dest": "dynamsales.py" }]
+}
