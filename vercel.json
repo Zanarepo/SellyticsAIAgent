@@ -1,12 +1,10 @@
 {
     "version": 2,
     "builds": [
-        { "src": "salesforcast.py", "use": "@vercel/python" },
-        { "src": "customer_inquiries.py", "use": "@vercel/python" },
-        { "src": "supabaseClient.py", "use": "@vercel/python" }
+        { "src": "api.py", "use": "@vercel/python" }
     ],
     "routes": [
-        { "src": "/forecast", "dest": "salesforcast.py" },
-        { "src": "/inquiries", "dest": "customer_inquiries.py" }
+        { "src": "/forecast", "dest": "api.py" },
+        { "src": "/inquiries", "dest": "api.py" }
     ]
 }
