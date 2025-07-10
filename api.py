@@ -1,3 +1,4 @@
+from flask import Flask, request, jsonify
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
@@ -5,12 +6,14 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from datetime import datetime, timedelta, timezone
 import numpy as np
-import json
 import logging
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Initialize Flask app
+app = Flask(__name__)
 
 # Initialize Supabase client
 load_dotenv()
@@ -172,79 +175,33 @@ def handle_inquiries():
         logger.error(f"Error in handle_inquiries: {str(e)}")
         raise
 
-def handler(event, context=None):
+@app.route('/forecast', methods=['GET'])
+def forecast_endpoint():
     try:
-        # Extract path from Vercel event
-        path = event.get("path", "")
-        if not path:
-            path = (
-                event.get("requestContext", {}).get("http", {}).get("path", "") or
-                event.get("rawPath", "") or
-                event.get("url", "").split("?")[0].lstrip("/")
-            )
-        path = path.lstrip("/")  # Remove leading slash
-        logger.info(f"Received request for path: {path}")
-
-        # Handle endpoints
-        if path in ["forecast", "/forecast"]:
-            forecasts = forecast_demand()
-            anomalies = detect_anomalies()
-            trends = sales_trends()
-            return {
-                "statusCode": 200,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
-                },
-                "body": json.dumps({
-                    "forecasts": forecasts,
-                    "anomalies": anomalies,
-                    "trends": trends
-                })
-            }
-        elif path in ["inquiries", "/inquiries"]:
-            inquiries = handle_inquiries()
-            return {
-                "statusCode": 200,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
-                },
-                "body": json.dumps({"inquiries": inquiries})
-            }
-        elif path in ["", "/"]:
-            return {
-                "statusCode": 200,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
-                },
-                "body": json.dumps({"message": "Sellytics AI Agent Backend"})
-            }
-        else:
-            logger.warning(f"Unknown path: {path}")
-            return {
-                "statusCode": 404,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
-                },
-                "body": json.dumps({"error": "Endpoint not found"})
-            }
+        forecasts = forecast_demand()
+        anomalies = detect_anomalies()
+        trends = sales_trends()
+        return jsonify({
+            "forecasts": forecasts,
+            "anomalies": anomalies,
+            "trends": trends
+        }), 200
     except Exception as e:
-        logger.error(f"Handler error: {str(e)}")
-        return {
-            "statusCode": 500,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps({"error": str(e)})
-        }
+        logger.error(f"Error in /forecast: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/inquiries', methods=['GET'])
+def inquiries_endpoint():
+    try:
+        inquiries = handle_inquiries()
+        return jsonify({"inquiries": inquiries}), 200
+    except Exception as e:
+        logger.error(f"Error in /inquiries: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/', methods=['GET'])
+def root_endpoint():
+    return jsonify({"message": "Sellytics AI Agent Backend"}), 200
 
 if __name__ == "__main__":
-    logger.info("Running local test")
-    forecast_demand()
-    detect_anomalies()
-    sales_trends()
-    handle_inquiries()
+    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
