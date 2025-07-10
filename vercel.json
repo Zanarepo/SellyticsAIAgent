@@ -5,6 +5,7 @@
     ],
     "routes": [
         { "src": "/forecast", "dest": "api.py" },
-        { "src": "/inquiries", "dest": "api.py" }
+        { "src": "/inquiries", "dest": "api.py" },
+        { "src": "/", "dest": "api.py" }
     ]
 }
