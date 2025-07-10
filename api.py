@@ -5,8 +5,6 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from datetime import datetime, timedelta, timezone
 import numpy as np
-import nltk
-from nltk.tokenize import word_tokenize
 import json
 import logging
 
@@ -22,7 +20,6 @@ if not supabase_url or not supabase_key:
     logger.error("Missing SUPABASE_URL or SUPABASE_KEY")
     raise ValueError("Supabase credentials not found")
 supabase: Client = create_client(supabase_url, supabase_key)
-nltk.download('punkt_tab', quiet=True)
 
 # Sales forecasting logic
 def forecast_demand():
@@ -142,7 +139,7 @@ def sales_trends():
 
 def process_inquiry(inquiry_text):
     try:
-        tokens = word_tokenize(inquiry_text.lower())
+        inquiry_text = inquiry_text.lower()
         responses = {
             "stock": "Please check the inventory dashboard or contact support for stock details.",
             "availability": "Availability can be checked in real-time on the platform.",
@@ -151,7 +148,7 @@ def process_inquiry(inquiry_text):
             "price": "Pricing details are available in the product catalog."
         }
         for key, response in responses.items():
-            if key in tokens:
+            if key in inquiry_text:
                 return response
         return "Thank you for your inquiry. Please provide more details or contact support."
     except Exception as e:
@@ -180,13 +177,12 @@ def handler(event, context=None):
         # Extract path from Vercel event
         path = event.get("path", "")
         if not path:
-            # Try alternative path locations in Vercel event
             path = (
                 event.get("requestContext", {}).get("http", {}).get("path", "") or
                 event.get("rawPath", "") or
                 event.get("url", "").split("?")[0].lstrip("/")
             )
-        path = path.lstrip("/")  # Remove leading slash for consistency
+        path = path.lstrip("/")  # Remove leading slash
         logger.info(f"Received request for path: {path}")
 
         # Handle endpoints
@@ -198,7 +194,7 @@ def handler(event, context=None):
                 "statusCode": 200,
                 "headers": {
                     "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"  # Enable CORS for testing
+                    "Access-Control-Allow-Origin": "*"
                 },
                 "body": json.dumps({
                     "forecasts": forecasts,
