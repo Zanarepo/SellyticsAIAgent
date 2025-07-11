@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression
 from datetime import datetime, timedelta, timezone
 import numpy as np
 import logging
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -175,6 +176,30 @@ def handle_inquiries():
         logger.error(f"Error in handle_inquiries: {str(e)}")
         raise
 
+# Scheduled task to run analysis automatically
+def run_analysis():
+    try:
+        logger.info("Running scheduled analysis...")
+        forecast_demand()
+        detect_anomalies()
+        sales_trends()
+        handle_inquiries()
+        logger.info("Scheduled analysis completed")
+    except Exception as e:
+        logger.error(f"Error in scheduled analysis: {str(e)}")
+
+# Set up scheduler
+from datetime import datetime, timezone
+from apscheduler.schedulers.background import BackgroundScheduler
+
+scheduler = BackgroundScheduler()
+
+# Schedule the job to run every 5 minutes, starting now
+scheduler.add_job(run_analysis, 'interval', minutes=5, next_run_time=datetime.now(timezone.utc))
+
+scheduler.start()
+
+
 @app.route('/forecast', methods=['GET'])
 def forecast_endpoint():
     try:
@@ -204,4 +229,7 @@ def root_endpoint():
     return jsonify({"message": "Sellytics AI Agent Backend"}), 200
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
+    try:
+        app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
+    except (KeyboardInterrupt, SystemExit):
+        scheduler.shutdown()
