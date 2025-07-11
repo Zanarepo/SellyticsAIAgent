@@ -195,7 +195,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 scheduler = BackgroundScheduler()
 
 # Schedule the job to run every 5 minutes, starting now
-scheduler.add_job(run_analysis, 'interval', minutes=5, next_run_time=datetime.now(timezone.utc))
+scheduler.add_job(run_analysis, 'interval', weeks=1, next_run_time=datetime.now(timezone.utc))
 
 scheduler.start()
 
