@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://your-frontend-url"]}})  # Replace with your frontend URL
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https:sellytics.sprintifyhq.com"]}})  # Replace with your frontend URL
 
 # Initialize Supabase client
 load_dotenv()
@@ -27,6 +27,20 @@ if not supabase_url or not supabase_key:
     logger.error("Missing SUPABASE_URL or SUPABASE_KEY")
     raise ValueError("Supabase credentials not found")
 supabase: Client = create_client(supabase_url, supabase_key)
+
+# Helper function to convert NumPy types to Python types
+def convert_to_python_types(obj):
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {k: convert_to_python_types(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_python_types(item) for item in obj]
+    return obj
 
 # Cache database queries
 @lru_cache(maxsize=32)
@@ -76,9 +90,10 @@ def forecast_demand(store_id=None):
                 continue
 
             model = Prophet(
-                yearly_seasonality=True,
+                yearly_seasonality=False,  # Disable to avoid holidays
                 weekly_seasonality=False,
                 daily_seasonality=False,
+                holidays=None,  # Explicitly disable holidays
                 changepoint_prior_scale=0.05,
                 seasonality_prior_scale=10.0
             )
@@ -249,6 +264,8 @@ def sales_trends(store_id=None):
             "monthly_trends": sales_df.groupby("month")["quantity"].sum().to_dict(),
             "yearly_growth": sales_df.groupby("year")["quantity"].sum().pct_change().fillna(0).to_dict()
         }
+        # Convert NumPy types to Python types
+        trends = convert_to_python_types(trends)
         logger.info(f"Generated trends for store_id {store_id or 'all'}: {trends}")
         return trends
     except Exception as e:
