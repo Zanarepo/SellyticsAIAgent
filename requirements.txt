@@ -1,12 +1,11 @@
-supabase>=2.0.0
-scikit-learn==1.2.2
-pandas==2.0.3
-numpy==1.24.3
-python-dotenv>=1.0.0
-prophet==1.1.2
 flask==2.3.2
 flask-cors==4.0.0
-flask>=2.2.0
-gunicorn>=20.1.0
+supabase>=2.0.0
+python-dotenv>=1.0.0
+pandas==2.0.3
+numpy==1.24.3
+scikit-learn==1.2.2
+prophet==1.1.2
+holidays==0.25  # Pin to a compatible version
 gunicorn>=20.1.0
 setuptools>=65.5.0
