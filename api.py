@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -17,7 +17,21 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https:sellytics.sprintifyhq.com"]}})  # Replace with your frontend URL
+CORS(app, resources={r"/*": {
+    "origins": ["http://localhost:3000", "https://sellytics.sprintifyhq.com"],
+    "methods": ["GET", "POST", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"]
+}})
+logger.info("CORS configured for origins: http://localhost:3000, https://sellytics.sprintifyhq.com")
+
+# Ensure CORS headers for all responses, including errors
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,POST,OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+    logger.debug(f"Added CORS headers to response: {response.headers}")
+    return response
 
 # Initialize Supabase client
 load_dotenv()
